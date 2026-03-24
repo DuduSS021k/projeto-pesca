@@ -1,0 +1,142 @@
+{
+  "name": "Painel Pesca Oficial",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "dados-finais",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "2c7575b1-2b5c-4c52-8fc8-b398f9a7ee17",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -48
+      ],
+      "webhookId": "eb704256-c923-414f-8917-e690829465a7"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/DuduSS021k/projeto-pesca/refs/heads/main/public/dados_pesca.csv",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "fcccb037-26e6-4fb6-9a8b-39d7823c3038",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        -48
+      ],
+      "id": "cb204389-2086-4287-805c-95481a6ff0d6",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1200,
+        -48
+      ],
+      "id": "235e3cfe-ab7c-4450-b7be-2096c5360820",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Captura os dados que vêm do nó anterior\nconst item = $input.all()[0].json;\n\n// Tenta encontrar o texto CSV\nconst csvText =\n\titem.text ||\n\titem.data ||\n\tObject.values(item)[0];\n\nif (!csvText) {\n\treturn [\n\t\t{\n\t\t\tjson: {\n\t\t\t\terror: \"Nenhum texto encontrado no nó anterior.\"\n\t\t\t}\n\t\t}\n\t];\n}\n\n// Divide o texto em linhas e remove linhas vazias\nconst lines = csvText\n\t.split(\"\\n\")\n\t.map(line => line.trim())\n\t.filter(line => line);\n\n// Define o separador do CSV\nconst separator = \",\";\n\n// Obtém os cabeçalhos\nconst headers = lines[0]\n\t.split(separator)\n\t.map(header =>\n\t\theader\n\t\t\t.replace(/\"/g, \"\")\n\t\t\t.replace(/'/g, \"\")\n\t\t\t.trim()\n\t);\n\nconst result = [];\n\n// Processa as linhas de dados\nfor (const line of lines.slice(1)) {\n\tconst currentLine = line.split(separator);\n\n\t// Verifica se o número de colunas corresponde ao cabeçalho\n\tif (currentLine.length === headers.length) {\n\t\tconst rowObject = {};\n\n\t\theaders.forEach((header, index) => {\n\t\t\tlet value = currentLine[index]\n\t\t\t\t.replace(/\"/g, \"\")\n\t\t\t\t.replace(/'/g, \"\")\n\t\t\t\t.trim();\n\n\t\t\t// Tenta converter para número\n\t\t\tif (value) {\n\t\t\t\tconst num = Number(value);\n\n\t\t\t\tif (!isNaN(num)) {\n\t\t\t\t\tvalue = num;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\trowObject[header] = value;\n\t\t});\n\n\t\tresult.push({\n\t\t\tjson: rowObject\n\t\t});\n\t}\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -48
+      ],
+      "id": "71739a08-07fd-42bb-8f48-37d4d9e83346",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "23b75f27-2af6-4a73-abf5-9f6a18eadc2b",
+  "meta": {
+    "instanceId": "199e10d0f0b4b45d884d44c3c2452f69e9cb7ff38f4e26f630cf56389214e0e2"
+  },
+  "id": "65eqoWgwD9Hs5tzN",
+  "tags": []
+}
