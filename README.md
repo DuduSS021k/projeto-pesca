@@ -49,3 +49,5 @@ O frontend foi construído em **React.js (Vite)** utilizando componentes analít
 1. Clone o repositório:
    ```bash
    git clone https://github.com/DuduSS021k/projeto-pesca.git
+
+   <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/04ddfb56-dcee-40d3-a915-53bbb3ab8aa4" />
