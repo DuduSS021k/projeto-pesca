@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Papa from 'papaparse';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend } from 'recharts';
-import { Ship, Anchor, Clock, Users } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts';
+import { Ship, Anchor, Clock } from 'lucide-react';
 
 function App() {
   const [dados, setDados] = useState([]);
@@ -27,13 +26,21 @@ function App() {
   };
 
   useEffect(() => {
-    Papa.parse('/dados_pesca.csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: (resultado) => {
-        const dadosBrutos = resultado.data;
-        setDados(dadosBrutos);
+    // Faz o fetch direto no endpoint do webhook do n8n que o professor pediu
+    fetch('http://localhost:5678/webhook/dados-finais')
+      .then((response) => {
+        if (!response.ok) throw new Error('Erro na resposta do n8n');
+        return response.json(); 
+      })
+      .then((dadosProcessados) => {
+        // CORREÇÃO DEFINTIVA: Garante que o estado 'dados' recebe o array e nunca fica undefined
+        if (Array.isArray(dadosProcessados)) {
+          setDados(dadosProcessados);
+        } else {
+          setDados([]);
+          setCarregando(false);
+          return;
+        }
 
         const portosMap = {};
         const ufsMap = {};
@@ -41,11 +48,11 @@ function App() {
         const frotasAuxMap = { "Apenas Principal": 0, "Usa Apoio (2ª/3ª)": 0 };
         const mesesMap = {};
 
-        dadosBrutos.forEach(item => {
-          // Extração das colunas chave identificadas no diagnóstico
-          const porto = (item.portoChegada || '').toString().trim().toUpperCase();
-          const uf = (item.ufEmbarcacaoUm || '').toString().trim().toUpperCase();
-          const modalidade = (item.modeloMapaDeBordo || '').toString().trim().toUpperCase();
+        dadosProcessados.forEach(item => {
+          // Extração das colunas chave vindas tratadas do n8n
+          const porto = (item.portoChegada || item.Porto || '').toString().trim().toUpperCase();
+          const uf = (item.ufEmbarcacaoUm || item.UF || '').toString().trim().toUpperCase();
+          const modalidade = (item.modeloMapaDeBordo || item.modalidade || '').toString().trim().toUpperCase();
           const apoioDois = (item.nomeEmbarcacaoDois || '').toString().trim();
           const apoioTres = (item.nomeEmbarcacaoTres || '').toString().trim();
           
@@ -98,16 +105,15 @@ function App() {
         })).sort((a,b)=>b.media-a.media).slice(0, 5));
 
         setUsoAuxiliar(Object.keys(frotasAuxMap).map(k => ({ name: k, value: frotasAuxMap[k] })));
-
         setSazonalidade(Object.keys(mesesMap).map(k => ({ name: k, viagens: mesesMap[k] })).sort((a,b) => a.name.localeCompare(b.name)).slice(-6));
 
         setCarregando(false);
-      },
-      error: (err) => {
-        console.error("Erro ao processar arquivo:", err);
+      })
+      .catch(error => {
+        console.error("Erro ao carregar dados do n8n:", error);
+        setDados([]); 
         setCarregando(false);
-      }
-    });
+      });
   }, []);
 
   const CORES = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -116,8 +122,8 @@ function App() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', backgroundColor: '#f0f2f5', color: '#1a365d' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2>⚙️ Aplicando Regras de Negócio Otimizadas...</h2>
-          <p style={{ color: '#4a5568' }}>Calculando cubos OLAP e Higienizando datas (Fato / Dimensões)</p>
+          <h2>⚙️ Conectando com a API do n8n (Via Webhook)...</h2>
+          <p style={{ color: '#4a5568' }}>Calculando cubos OLAP e processando ETL em Tempo Real</p>
         </div>
       </div>
     );
@@ -135,7 +141,7 @@ function App() {
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', flex: 1, minWidth: '220px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <Ship size={40} color="#0088FE" />
           <div>
-            <h4 style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>Volume Total (Fato)</h4>
+            <h4 style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>Volume Total (Fato via n8n)</h4>
             <p style={{ margin: '4px 0 0 0', fontSize: '22px', fontWeight: 'bold', color: '#1e293b' }}>{dados.length.toLocaleString('pt-BR')}</p>
           </div>
         </div>
