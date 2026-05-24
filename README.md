@@ -46,8 +46,17 @@ O frontend foi construído em **React.js (Vite)** utilizando componentes analít
 
 ## 🚀 Como Executar o Projeto
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/DuduSS021k/projeto-pesca.git
-
-   <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/04ddfb56-dcee-40d3-a915-53bbb3ab8aa4" />
+1.1. Clone o repositório
+bashgit clone https://github.com/DuduSS021k/projeto-pesca.git
+cd projeto-pesca
+2. Baixe o arquivo de dados
+O arquivo dados-finais.json é grande demais para ficar no GitHub.
+Baixe ele pelo link abaixo e coloque na pasta public/ do projeto:
+📥 [Baixar dados-finais.json] (https://github.com/DuduSS021k/projeto-pesca/releases/download/v1.0/dados-finais.json)
+A estrutura deve ficar assim:
+projeto-pesca/
+├── public/
+│   └── dados-finais.json  ✅ coloque aqui
+├── src/
+│   └── App.jsx
+└── package.json
