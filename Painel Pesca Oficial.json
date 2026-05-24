@@ -1,0 +1,142 @@
+{
+  "name": "Painel Pesca Oficial",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "dados-finais",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "1c0ad5d2-b4db-4b69-a4ac-998ab5fc5999",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -288
+      ],
+      "webhookId": "eb704256-c923-414f-8917-e690829465a7"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/DuduSS021k/projeto-pesca/refs/heads/main/public/dados_pesca.csv",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "8b9574c8-fdcb-4ca3-96b3-7268cf53da87",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        192,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        -288
+      ],
+      "id": "5ba16efd-b5db-4025-86ac-22ac69936fbd",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        880,
+        -288
+      ],
+      "id": "a06fb00d-d05c-4bdf-b41e-b7cc48234414",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.all()[0].json;\n\nconst csvText = item.text || item.data || Object.values(item)[0];\n\nif (!csvText) {\n  return [{ json: { error: \"Nenhum texto encontrado no nó anterior.\" } }];\n}\n\nconst lines = csvText\n  .split(\"\\n\")\n  .map(line => line.trim())\n  .filter(line => line);\n\nconst separator = \";\"; // ✅ corrigido\n\nconst headers = lines[0]\n  .split(separator)\n  .map(h => h.replace(/\"/g, \"\").replace(/'/g, \"\").trim());\n\nconst result = [];\n\nfor (const line of lines.slice(1)) {\n  const currentLine = line.split(separator);\n  if (currentLine.length !== headers.length) continue;\n\n  const rowObject = {};\n  headers.forEach((header, index) => {\n    let value = currentLine[index].replace(/\"/g, \"\").replace(/'/g, \"\").trim();\n    if (value) {\n      const num = Number(value);\n      if (!isNaN(num)) value = num;\n    }\n    rowObject[header] = value;\n  });\n\n  result.push({ json: rowObject });\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -288
+      ],
+      "id": "e60752dc-3438-4490-bdec-1b920f8c7127",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8d66c868-c45e-46a6-971f-f0b4f4f07e72",
+  "meta": {
+    "instanceId": "d720940faa2c07625f06f6919bbd65a2f6da282467bdfbbe833cd43607a3252d"
+  },
+  "id": "WAw7Zar8H5ywGr5c",
+  "tags": []
+}
